@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  nest:
+    ports:
+      - 24500:5000
+    command: ["yarn", "start:dev"]
+    links:
+      - db
+  db:
+    container_name: db
+    image: mysql:8.0
+    restart: always
+    volumes:
+      - ./mysql:/var/lib/mysql
+    env_file: 
+      - .env
+    logging:
+      driver: none
+    networks:
+      - rate-checker
+  adminer:
+    container_name: adminer
+    image: adminer
+    restart: always
+    links:
+      - db
+    ports:
+      - 24580:8080
+    volumes:
+      - ./adminer/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    logging:
+      driver: none
+    networks:
+      - rate-checker
