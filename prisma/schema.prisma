@@ -2,10 +2,31 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
+}
+
+model Transactions {
+  id            Int      @id @db.Int @default(autoincrement())
+  fundingRate   Float
+  fundingRateAt DateTime @db.DateTime() @unique
+  symble        SYMBOL
+  side          String   @db.VarChar(255)
+  size          Float
+  execFee       Float
+  execAt        DateTime @db.DateTime() @unique
+  createdAt     DateTime @default(now()) @db.DateTime(6)
+
+  @@map("transactions")
+}
+
+enum SYMBOL {
+  btcusd
+  ethusd
+  eosusd
+  xrpusd
 }
