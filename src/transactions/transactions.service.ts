@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma.service';
 import dayjs from 'src/utils/helpers/dayjs';
 import CryptoJS from 'crypto-js';
 import { SYMBOL } from '.prisma/client';
+import { FirebaseFirestoreService } from '@aginix/nestjs-firebase-admin';
 
 @Injectable()
 export class TransactionsService {
@@ -12,7 +13,8 @@ export class TransactionsService {
     private readonly http: HttpService,
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
-  ) {}
+    private readonly firestore: FirebaseFirestoreService,
+  ) { }
 
   private readonly logger = new Logger(TransactionsService.name);
 
@@ -22,6 +24,16 @@ export class TransactionsService {
     const result = await this.fetchFundingFee();
     const execDate = dayjs.unix(result.exec_timestamp).utc();
     const fundingRateAt = execDate.clone().subtract(8, 'hour').toDate();
+
+    await this.firestore.collection('transactions').add({
+      fundingRate: result.funding_rate,
+      fundingRateAt,
+      symble: 'ethusd',
+      side: result.side,
+      size: result.size,
+      execFee: result.exec_fee,
+      execAt: execDate.toDate(),
+    })
 
     await this.prisma.transactions.create({
       data: {
@@ -76,5 +88,23 @@ export class TransactionsService {
       })
       .toPromise();
     return res.data.result;
+  }
+
+  async migrateToFirestore(): Promise<void> {
+    const allTransactions = await this.prisma.transactions.findMany();
+
+    console.log('data count', allTransactions.length);
+
+    for (const transaction of allTransactions) {
+      await this.firestore.collection('transactions').add({
+        fundingRate: transaction.fundingRate,
+        fundingRateAt: transaction.fundingRateAt,
+        symble: transaction.symble,
+        side: transaction.side,
+        size: transaction.size,
+        execFee: transaction.execFee,
+        execAt: transaction.execAt,
+      })
+    }
   }
 }

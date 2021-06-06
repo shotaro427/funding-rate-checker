@@ -36,3 +36,5 @@ lerna-debug.log*
 .env
 mysql/
 yarn.lock
+
+funding-rate-checker-firebase-adminsdk-vgv9m-1357236a86.json
